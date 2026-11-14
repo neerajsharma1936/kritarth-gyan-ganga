@@ -60,8 +60,8 @@ export default function FeesManagement() {
   };
   const studentMatchesClass = (student, selected) => {
     if (!selected) return true;
-    if (selectedMonth && selectedYear) return normalizeClass(feePlanForMonth(student, `${selectedYear}-${selectedMonth}`).className) === selected;
-    if (selectedYear) return Array.from({length:12}, (_,i) => `${selectedYear}-${String(i+1).padStart(2,"0")}`).some(key => normalizeClass(feePlanForMonth(student, key).className) === selected);
+    if (appliedMonth) return normalizeClass(feePlanForMonth(student, `${appliedYear || currentYear}-${appliedMonth}`).className) === selected;
+    if (appliedYear) return Array.from({length:12}, (_,i) => `${appliedYear}-${String(i+1).padStart(2,"0")}`).some(key => normalizeClass(feePlanForMonth(student, key).className) === selected);
     return normalizeClass(student.className) === selected;
   };
   // Keep the selector independent from stored payments so every calendar month is always available.
