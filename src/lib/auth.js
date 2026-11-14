@@ -29,6 +29,7 @@ export async function signInAdmin(email, password) {
   const { profile, error: profileError } = await getAdminProfile(data.user?.id);
   if (profileError) {
     await supabase.auth.signOut();
+    clearSession();
     return { session: null, error: profileError };
   }
   const session = {
@@ -56,6 +57,7 @@ export async function getCurrentAdminSession() {
   const { profile, error: profileError } = await getAdminProfile(data.session.user.id);
   if (profileError) {
     await supabase.auth.signOut();
+    clearSession();
     return { session: null, error: profileError };
   }
   const session = {
