@@ -60,8 +60,8 @@ export default function FeesManagement() {
   };
   const studentMatchesClass = (student, selected) => {
     if (!selected) return true;
-    if (selectedMonth && selectedYear) return normalizeClass(feePlanForMonth(student, `${selectedYear}-${selectedMonth}`).className) === selected;
-    if (selectedYear) return Array.from({length:12}, (_,i) => `${selectedYear}-${String(i+1).padStart(2,"0")}`).some(key => normalizeClass(feePlanForMonth(student, key).className) === selected);
+    if (appliedMonth) return normalizeClass(feePlanForMonth(student, `${appliedYear || currentYear}-${appliedMonth}`).className) === selected;
+    if (appliedYear) return Array.from({length:12}, (_,i) => `${appliedYear}-${String(i+1).padStart(2,"0")}`).some(key => normalizeClass(feePlanForMonth(student, key).className) === selected);
     return normalizeClass(student.className) === selected;
   };
   // Keep the selector independent from stored payments so every calendar month is always available.
@@ -79,12 +79,12 @@ export default function FeesManagement() {
     const yearMonths = Array.from({ length: 12 }, (_, index) => `${appliedYear || currentYear}-${String(index + 1).padStart(2, "0")}`);
     const monthPayments = payments.filter(p => {
       const fm = p.feeMonth || String(p.date || "").slice(0, 7);
-      const monthMatch = !appliedMonth || (appliedYear ? fm === selectedMonthKey : fm.endsWith(`-${appliedMonth}`));
-      return p.status !== "reversed" && p.studentId === student.id && monthMatch;
+      const monthMatch = !appliedMonth || fm.endsWith(`-${appliedMonth}`);
+      return p.status !== "reversed" && p.studentId === student.id && fm.startsWith(String(appliedYear || currentYear)) && monthMatch;
     });
     const yearPayments = payments.filter(p => {
       const fm = p.feeMonth || String(p.date || "").slice(0, 7);
-      return p.status !== "reversed" && p.studentId === student.id && (!appliedYear || fm.startsWith(appliedYear));
+      return p.status !== "reversed" && p.studentId === student.id && fm.startsWith(String(appliedYear || currentYear));
     });
     const paid = monthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     // Fee amount is resolved for each fee month, so a promotion/new fee next year
@@ -105,18 +105,21 @@ export default function FeesManagement() {
   const stats = useMemo(() => {
     if (isCleared) return { expected: 0, collected: 0, pending: 0, pendingStudents: 0, overdue: 0, overdueStudents: 0, students: 0, rate: 0 };
     const scopedStudents = students.filter(s => studentMatchesClass(s, appliedClass));
-    const expected = scopedStudents.reduce((sum, s) => {
-      const start = String(s.feeStartMonth || `${currentYear}-01`);
-      if (appliedMonth && appliedYear) return start <= selectedMonthKey ? sum + monthlyFeeAmount(s) : sum;
-      const startYear = Number(start.slice(0,4));
-      const targetYear = Number(appliedYear || currentYear);
-      const monthsActive = Math.max(0, 12 - (startYear === targetYear ? Number(start.slice(5,7)) - 1 : 0));
-      return sum + monthlyFeeAmount(s) * monthsActive;
-    }, 0);
+    // Use historical fee plans for each month instead of multiplying the current fee.
+    // Without a selected year, the dashboard consistently defaults to the current year.
+    const targetYear = String(appliedYear || currentYear);
+    const expectedMonths = appliedMonth
+      ? [`${targetYear}-${appliedMonth}`]
+      : Array.from({ length: 12 }, (_, index) => `${targetYear}-${String(index + 1).padStart(2, "0")}`);
+    const expected = scopedStudents.reduce((sum, student) =>
+      sum + expectedMonths.reduce((monthTotal, monthKey) =>
+        monthTotal + getMonthStatus(student, monthKey, payments).amount, 0
+      ), 0
+    );
     const selectedPayments = payments.filter(p => {
       const fm = p.feeMonth || String(p.date || "").slice(0, 7);
-      const monthMatch = !appliedMonth || (appliedYear ? fm === selectedMonthKey : fm.endsWith(`-${appliedMonth}`));
-      return p.status !== "reversed" && monthMatch && (!appliedYear || fm.startsWith(appliedYear)) && (!appliedClass || studentMatchesClass(students.find(s => s.id === p.studentId) || {}, appliedClass));
+      const monthMatch = !appliedMonth || fm === `${targetYear}-${appliedMonth}`;
+      return p.status !== "reversed" && monthMatch && fm.startsWith(targetYear) && (!appliedClass || studentMatchesClass(students.find(s => s.id === p.studentId) || {}, appliedClass));
     });
     const collected = selectedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const pending = appliedMonth
@@ -125,7 +128,7 @@ export default function FeesManagement() {
     const pendingStudents = scopedStudents.filter(s => getRow(s).remaining > 0).length;
     const overdue = scopedStudents.reduce((sum, s) => sum + getRow(s).overdue, 0);
     const overdueStudents = scopedStudents.filter(s => getRow(s).overdue > 0).length;
-    const rate = expected ? Math.min(100, Math.round((collected / expected) * 100)) : 0;
+    const rate = expected ? Math.round((collected / expected) * 100) : 0;
     return { expected, collected, pending, pendingStudents, overdue, overdueStudents, students: scopedStudents.length, rate };
   }, [students, payments, selectedMonthKey, appliedMonth, appliedYear, appliedClass, refresh, isCleared]);
 

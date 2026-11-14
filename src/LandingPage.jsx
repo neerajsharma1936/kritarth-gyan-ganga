@@ -44,7 +44,7 @@ export default function LandingPage() {
         setMessage("Invalid administrator email or password. Please use credentials issued by the Super Admin.");
         return;
       }
-      setSession({ role: "admin", name: admin.name, email: admin.email });
+      setSession({ role: admin.role === "super_admin" || admin.isSuperAdmin === true ? "super_admin" : "admin", isSuperAdmin: admin.role === "super_admin" || admin.isSuperAdmin === true, userId: admin.id || admin.email, name: admin.name, email: admin.email });
       setMessage("Login successful. Opening your dashboard…");
       setTimeout(() => navigate("/admin"), 350);
     }

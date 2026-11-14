@@ -25,7 +25,7 @@ export default function Login({ initialRole = "admin" }) {
     if (role === "admin") {
       const admin = authenticateAdmin(email, password);
       if (admin) {
-        setSession({ role: admin.role === "super_admin" ? "super_admin" : "admin", isSuperAdmin: admin.role === "super_admin" || admin.isSuperAdmin === true, userId: admin.id || admin.email, name: admin.name, email: admin.email });
+        setSession({ role: admin.role === "super_admin" || admin.isSuperAdmin === true ? "super_admin" : "admin", isSuperAdmin: admin.role === "super_admin" || admin.isSuperAdmin === true, userId: admin.id || admin.email, name: admin.name, email: admin.email });
         navigate("/admin");
       } else {
         setError("Invalid admin email or password. Use the Super Admin credentials or an administrator account created by the Super Admin.");
