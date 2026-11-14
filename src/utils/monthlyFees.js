@@ -34,8 +34,13 @@ export function feePlanForMonth(student, month) {
 }
 
 export function monthlyFeeAmount(student, month = "") {
-  const plan = month ? feePlanForMonth(student, month) : null;
-  return Number(plan?.monthlyFee ?? student?.monthlyFee) || Math.round((Number(student?.totalFees) || 0) / 12);
+  if (month) {
+    const plan = feePlanForMonth(student, month);
+    // A student is not liable for fees before their first fee plan becomes active.
+    if (plan.inactive) return 0;
+    return Number(plan.monthlyFee) || 0;
+  }
+  return Number(student?.monthlyFee) || Math.round((Number(student?.totalFees) || 0) / 12);
 }
 
 export function getMonthStatus(student, month, payments = []) {
