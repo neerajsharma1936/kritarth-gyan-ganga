@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from "./supabase";
+import { setSession, clearSession } from "../utils/storage";
 
 export async function getAdminProfile(userId) {
   if (!isSupabaseConfigured || !supabase || !userId) {
@@ -30,40 +31,44 @@ export async function signInAdmin(email, password) {
     await supabase.auth.signOut();
     return { session: null, error: profileError };
   }
-  return {
-    session: {
-      userId: profile.id,
-      id: profile.id,
-      role: profile.role,
-      isSuperAdmin: profile.role === "super_admin",
-      name: profile.full_name || data.user.email || "Administrator",
-      email: data.user.email || "",
-    },
-    error: null,
+  const session = {
+    userId: profile.id,
+    id: profile.id,
+    role: profile.role,
+    isSuperAdmin: profile.role === "super_admin",
+    name: profile.full_name || data.user.email || "Administrator",
+    email: data.user.email || "",
   };
+  // Keep a non-authoritative display snapshot for existing dashboard components.
+  // Route protection always verifies the live Supabase Auth session and profile.
+  setSession(session);
+  return { session, error: null };
 }
 
 export async function getCurrentAdminSession() {
   if (!isSupabaseConfigured || !supabase) return { session: null, error: new Error("Supabase is not configured.") };
   const { data, error } = await supabase.auth.getSession();
   if (error) return { session: null, error };
-  if (!data.session?.user) return { session: null, error: null };
+  if (!data.session?.user) {
+    clearSession();
+    return { session: null, error: null };
+  }
   const { profile, error: profileError } = await getAdminProfile(data.session.user.id);
   if (profileError) {
     await supabase.auth.signOut();
     return { session: null, error: profileError };
   }
-  return {
-    session: {
-      userId: profile.id,
-      id: profile.id,
-      role: profile.role,
-      isSuperAdmin: profile.role === "super_admin",
-      name: profile.full_name || data.session.user.email || "Administrator",
-      email: data.session.user.email || "",
-    },
-    error: null,
+  const session = {
+    userId: profile.id,
+    id: profile.id,
+    role: profile.role,
+    isSuperAdmin: profile.role === "super_admin",
+    name: profile.full_name || data.session.user.email || "Administrator",
+    email: data.session.user.email || "",
   };
+  // Refresh the UI-only snapshot after reload; it is never used to authorize admin routes.
+  setSession(session);
+  return { session, error: null };
 }
 
 export async function signOutAdmin() {
