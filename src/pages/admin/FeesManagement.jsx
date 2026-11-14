@@ -79,12 +79,12 @@ export default function FeesManagement() {
     const yearMonths = Array.from({ length: 12 }, (_, index) => `${appliedYear || currentYear}-${String(index + 1).padStart(2, "0")}`);
     const monthPayments = payments.filter(p => {
       const fm = p.feeMonth || String(p.date || "").slice(0, 7);
-      const monthMatch = !appliedMonth || (appliedYear ? fm === selectedMonthKey : fm.endsWith(`-${appliedMonth}`));
-      return p.status !== "reversed" && p.studentId === student.id && monthMatch;
+      const monthMatch = !appliedMonth || fm.endsWith(`-${appliedMonth}`);
+      return p.status !== "reversed" && p.studentId === student.id && fm.startsWith(String(appliedYear || currentYear)) && monthMatch;
     });
     const yearPayments = payments.filter(p => {
       const fm = p.feeMonth || String(p.date || "").slice(0, 7);
-      return p.status !== "reversed" && p.studentId === student.id && (!appliedYear || fm.startsWith(appliedYear));
+      return p.status !== "reversed" && p.studentId === student.id && fm.startsWith(String(appliedYear || currentYear));
     });
     const paid = monthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     // Fee amount is resolved for each fee month, so a promotion/new fee next year
