@@ -5,7 +5,7 @@ import { getCurrentAdminSession } from "../../lib/auth";
 
 export default function ProtectedRoute({ role }) {
   const location = useLocation();
-  const [status, setStatus] = useState(role === "admin" ? "checking" : "ready");
+  const [status, setStatus] = useState("checking");
   const [session, setSession] = useState(null);
 
   useEffect(() => {
