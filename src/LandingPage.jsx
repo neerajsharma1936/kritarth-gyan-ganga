@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setSession, authenticateAdmin, addDemoRequest, getWebsiteContent, getStudentAchievements } from "./utils/storage";
+import { addDemoRequest, getWebsiteContent, getStudentAchievements } from "./utils/storage";
+import { signInAdmin } from "./lib/auth";
 
 const programs = [
   ["01", "Little Learners", "Nursery–Class 5", "Build joyful early skills in English, Hindi, Maths, reading and homework habits."],
@@ -30,7 +31,9 @@ export default function LandingPage() {
     setMenuOpen(false);
   };
 
-  const submitAuth = (event) => {
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const submitAuth = async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
       const email = String(form.get("email") || "").trim().toLowerCase();
@@ -39,14 +42,20 @@ export default function LandingPage() {
       setMessage("Public account creation is disabled. Please use the Login button or contact the administrator for access.");
       return;
     } else {
-      const admin = authenticateAdmin(email, password);
-      if (!admin) {
-        setMessage("Invalid administrator email or password. Please use credentials issued by the Super Admin.");
-        return;
+      setAuthLoading(true);
+      try {
+        const result = await signInAdmin(email, password);
+        if (result.error) {
+          setMessage(result.error.message || "Unable to sign in. Check your administrator credentials.");
+          return;
+        }
+        setMessage("Login successful. Opening your dashboard…");
+        setTimeout(() => navigate("/admin"), 350);
+      } catch (err) {
+        setMessage(err?.message || "An unexpected sign-in error occurred.");
+      } finally {
+        setAuthLoading(false);
       }
-      setSession({ role: "admin", name: admin.name, email: admin.email });
-      setMessage("Login successful. Opening your dashboard…");
-      setTimeout(() => navigate("/admin"), 350);
     }
   };
 
@@ -120,7 +129,7 @@ export default function LandingPage() {
 
     <footer><div className="container footer-main"><div><Brand /><p>Personal, caring tuition for Nursery to Class 12—helping students build confidence, skills and brighter futures.</p><a className="yellow" href="https://www.google.com/maps/search/?api=1&query=Hiramiya%20Ward%20No%2004%20Rosera%20Samastipur%20Bihar%20848210" target="_blank" rel="noreferrer">● Hiramiya Ward No - 04, Rosera, Samastipur, Bihar</a></div><FooterColumn title="Programmes" links={["Nursery–Class 5", "Classes 6–8", "Classes 9–10", "Classes 11–12"]} /><FooterColumn title="Quick links" links={["Our approach", "Student achievements", "Book a free session", "Admissions enquiry"]} /><div><h3>Contact us</h3><p><small>Director</small>{content.directorName || "Saroj Kumar"}</p><p><small>Phone</small><a href={`tel:${String(content.phone||"").replace(/\s+/g,"")}`}>{content.phone}</a></p><p><small>Email</small><a href={`mailto:${content.email||""}`}>{content.email}</a></p><p><small>Location</small>{content.address}</p><p><small>Hours</small>Monday–Saturday · 8:00 AM–7:00 PM</p><div className="social-links"><small>Follow us</small><div className="social-links-row">{content.linkedin && <a href={content.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>}{content.instagram && <a href={content.instagram} target="_blank" rel="noreferrer">Instagram</a>}{content.facebook && <a href={content.facebook} target="_blank" rel="noreferrer">Facebook</a>}{content.twitter && <a href={content.twitter} target="_blank" rel="noreferrer">X / Twitter</a>}{content.youtube && <a href={content.youtube} target="_blank" rel="noreferrer">YouTube</a>}</div></div></div></div><div className="container footer-bottom"><span>© 2026 Kritarth Gyan Ganga. All rights reserved.</span><span>Privacy policy · Terms of use · Contact</span></div></footer>
 
-    {authOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAuthOpen(false); }}><div className="auth-modal" role="dialog" aria-modal="true" aria-label="Account access"><button className="close" onClick={() => setAuthOpen(false)} aria-label="Close">×</button><span className="eyebrow">Kritarth Gyan Ganga family portal</span><h2>{authMode === "login" ? "Welcome back." : "Join Kritarth Gyan Ganga."}</h2><p>{authMode === "login" ? "Log in to view class updates, resources and progress notes." : "Create a family portal account to keep learning details in one place."}</p><div className="tabs"><button className="active" type="button">Admin Login</button></div><form onSubmit={submitAuth}><label>Email address<input name="email" type="email" required placeholder="you@example.com" /></label><label>Password<input name="password" type="password" required minLength="6" placeholder="Enter your password" /></label><button className="button full">Log in →</button></form>{message && <p className="success">{message}</p>}<small className="demo-note">Administrator access is controlled from the protected admin system. Public sign-up is disabled.</small></div></div>}
+    {authOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAuthOpen(false); }}><div className="auth-modal" role="dialog" aria-modal="true" aria-label="Account access"><button className="close" onClick={() => setAuthOpen(false)} aria-label="Close">×</button><span className="eyebrow">Kritarth Gyan Ganga family portal</span><h2>{authMode === "login" ? "Welcome back." : "Join Kritarth Gyan Ganga."}</h2><p>{authMode === "login" ? "Log in to view class updates, resources and progress notes." : "Create a family portal account to keep learning details in one place."}</p><div className="tabs"><button className="active" type="button">Admin Login</button></div><form onSubmit={submitAuth}><label>Email address<input name="email" type="email" required placeholder="you@example.com" /></label><label>Password<input name="password" type="password" required minLength="6" placeholder="Enter your password" /></label><button className="button full" disabled={authLoading}>{authLoading ? "Signing in…" : "Log in →"}</button></form>{message && <p className="success">{message}</p>}<small className="demo-note">Administrator access is controlled from the protected admin system. Public sign-up is disabled.</small></div></div>}
   </>;
 }
 

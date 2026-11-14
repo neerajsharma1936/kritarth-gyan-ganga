@@ -1,12 +1,14 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, UserPlus, LogOut, GraduationCap, UserRound, ReceiptText, ShieldCheck, CalendarDays, Gift, Globe2, Trophy } from "lucide-react";
 import { clearSession } from "../../utils/storage";
+import { signOutAdmin } from "../../lib/auth";
 import logo from "../../assets/kritarth-gyan-ganga-logo.png";
 
 export default function Sidebar({ role }) {
   const navigate = useNavigate();
 
-  function logout() {
+  async function logout() {
+    await signOutAdmin();
     clearSession();
     navigate("/", { replace: true });
   }
