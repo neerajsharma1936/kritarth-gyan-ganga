@@ -1733,3 +1733,76 @@ a { color: inherit; text-decoration: none; }
     flex-basis: 38px;
   }
 }
+
+
+/* Final mobile navigation alignment overrides.
+   Keep icon columns consistent and prevent the legacy compact icon-rail rules
+   from overriding the responsive drawer on small screens. */
+@media (max-width: 720px) {
+  .portal-app .sidebar {
+    width: min(290px, calc(100vw - 54px));
+    padding: 18px 14px;
+  }
+  .portal-app .sidebar .brand {
+    justify-content: flex-start;
+    padding: 5px 8px 22px;
+  }
+  .portal-app .sidebar .brand > div:last-child,
+  .portal-app .sidebar .nav-label,
+  .portal-app .sidebar .nav-link span,
+  .portal-app .sidebar .logout-button {
+    display: block;
+  }
+  .portal-app .sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 46px;
+    padding: 10px 13px;
+    color: #526176;
+    font-weight: 650;
+  }
+  .portal-app .sidebar .nav-link svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    flex: 0 0 20px;
+    stroke-width: 2;
+  }
+  .portal-app .sidebar .nav-link span {
+    min-width: 0;
+    line-height: 1.35;
+  }
+  .portal-app .sidebar .nav-link:hover {
+    background: #edf3fb;
+    color: #17375e;
+  }
+  .portal-app .sidebar .nav-link.active {
+    background: #1d2a3e;
+    color: #fff;
+  }
+  .portal-app .sidebar .logout-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 13px;
+    color: #526176;
+  }
+  .portal-app .sidebar .logout-button svg {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    flex: 0 0 20px;
+  }
+  .portal-app .sidebar .logout-button span {
+    display: inline;
+  }
+  .portal-app .main-content {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+}
