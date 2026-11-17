@@ -1600,3 +1600,209 @@ a { color: inherit; text-decoration: none; }
   max-height: 100%;
   object-fit: cover;
 }
+
+
+/* Mobile portal navigation: use a slide-in drawer instead of a narrow icon rail. */
+.portal-app .topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.portal-app .mobile-nav-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 2px 8px rgba(16,24,40,.06);
+}
+.portal-app .mobile-sidebar-backdrop {
+  display: none;
+}
+@media (max-width: 720px) {
+  .portal-app .sidebar {
+    z-index: 1002;
+    width: min(290px, calc(100vw - 54px));
+    height: 100dvh;
+    padding: 18px 14px;
+    transform: translateX(-105%);
+    transition: transform .24s ease;
+    box-shadow: 12px 0 35px rgba(7,16,31,.2);
+    overflow: hidden;
+  }
+  .portal-app .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .portal-app .sidebar .brand {
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 5px 8px 22px;
+  }
+  .portal-app .sidebar .brand > div:last-child {
+    display: block;
+  }
+  .portal-app .sidebar .brand strong {
+    font-size: 16px;
+  }
+  .portal-app .sidebar .side-nav {
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .portal-app .sidebar .nav-label {
+    display: block;
+    padding: 0 12px 7px;
+    font-size: 9px;
+  }
+  .portal-app .sidebar .nav-link {
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 43px;
+    padding: 10px 13px;
+    font-size: 13px;
+  }
+  .portal-app .sidebar .nav-link span {
+    display: inline;
+  }
+  .portal-app .sidebar .logout-button {
+    display: flex;
+    min-height: 42px;
+    margin-top: 10px;
+  }
+  .portal-app .sidebar .logout-button span {
+    display: inline;
+  }
+  .portal-app .mobile-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 1001;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: rgba(8, 17, 31, .48);
+  }
+  .portal-app .main-content {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
+    padding: 18px 16px 36px;
+  }
+  .portal-app .mobile-nav-toggle {
+    display: inline-flex;
+  }
+  .portal-app .topbar {
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .portal-app .topbar-title-group h1 {
+    font-size: clamp(19px, 5vw, 24px);
+    line-height: 1.2;
+  }
+  .portal-app .topbar-title-group p {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .portal-app .profile-chip {
+    flex: 0 0 auto;
+  }
+  .portal-app .profile-chip > div:last-child {
+    display: none;
+  }
+}
+@media (max-width: 420px) {
+  .portal-app .main-content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+  .portal-app .topbar-title-group {
+    gap: 8px;
+  }
+  .portal-app .mobile-nav-toggle {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+}
+
+
+/* Final mobile navigation alignment overrides.
+   Keep icon columns consistent and prevent the legacy compact icon-rail rules
+   from overriding the responsive drawer on small screens. */
+@media (max-width: 720px) {
+  .portal-app .sidebar {
+    width: min(290px, calc(100vw - 54px));
+    padding: 18px 14px;
+  }
+  .portal-app .sidebar .brand {
+    justify-content: flex-start;
+    padding: 5px 8px 22px;
+  }
+  .portal-app .sidebar .brand > div:last-child,
+  .portal-app .sidebar .nav-label,
+  .portal-app .sidebar .nav-link span,
+  .portal-app .sidebar .logout-button {
+    display: block;
+  }
+  .portal-app .sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 46px;
+    padding: 10px 13px;
+    color: #526176;
+    font-weight: 650;
+  }
+  .portal-app .sidebar .nav-link svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    flex: 0 0 20px;
+    stroke-width: 2;
+  }
+  .portal-app .sidebar .nav-link span {
+    min-width: 0;
+    line-height: 1.35;
+  }
+  .portal-app .sidebar .nav-link:hover {
+    background: #edf3fb;
+    color: #17375e;
+  }
+  .portal-app .sidebar .nav-link.active {
+    background: #1d2a3e;
+    color: #fff;
+  }
+  .portal-app .sidebar .logout-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 13px;
+    color: #526176;
+  }
+  .portal-app .sidebar .logout-button svg {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    flex: 0 0 20px;
+  }
+  .portal-app .sidebar .logout-button span {
+    display: inline;
+  }
+  .portal-app .main-content {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+}

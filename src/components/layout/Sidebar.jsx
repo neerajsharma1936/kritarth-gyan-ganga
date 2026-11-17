@@ -4,12 +4,13 @@ import { clearSession } from "../../utils/storage";
 import { signOutAdmin } from "../../lib/auth";
 import logo from "../../assets/kritarth-gyan-ganga-logo.png";
 
-export default function Sidebar({ role }) {
+export default function Sidebar({ role, mobileOpen = false, onNavigate }) {
   const navigate = useNavigate();
 
   async function logout() {
     await signOutAdmin();
     clearSession();
+    if (onNavigate) onNavigate();
     navigate("/", { replace: true });
   }
 
@@ -34,19 +35,24 @@ export default function Sidebar({ role }) {
   const links = (role === "admin" || role === "super_admin") ? adminLinks : studentLinks;
 
   return (
-    <aside className="sidebar">
+    <aside className={mobileOpen ? "sidebar mobile-open" : "sidebar"} aria-label="Main navigation">
       <div className="brand">
         <div className="brand-logo"><img src={logo} alt="Kritarth Gyan Ganga logo" /></div>
         <div>
           <strong>Kritarth Gyan Ganga</strong>
-          
         </div>
       </div>
 
       <nav className="side-nav">
         <p className="nav-label">MENU</p>
         {links.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={onNavigate}
+            className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+          >
             <Icon size={19} />
             <span>{label}</span>
           </NavLink>
@@ -55,7 +61,7 @@ export default function Sidebar({ role }) {
 
       <button className="logout-button" onClick={logout}>
         <LogOut size={18} />
-        Logout
+        <span>Logout</span>
       </button>
     </aside>
   );
