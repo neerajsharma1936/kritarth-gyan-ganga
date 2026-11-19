@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, CalendarDays, IndianRupee, Phone, Mail, MapPin, Plus,
   Pencil, Trash2, Download, Camera, Send, MessageCircle, Printer,
@@ -12,7 +12,8 @@ import AppLayout from "../../components/layout/AppLayout";
 import Modal from "../../components/common/Modal";
 import Receipt from "../../components/receipts/Receipt";
 import PaymentRequest from "../../components/payments/PaymentRequest";
-import { addPayment, archiveStudent, permanentlyDeleteStudent, getPayments, getStudents, promoteStudent, reversePayment, updateStudent } from "../../utils/storage";
+import { addPayment, getPayments, reversePayment } from "../../utils/storage";
+import { getStudentById, archiveStudent, updateStudent } from "../../lib/studentService";
 import { currency, dateFormat } from "../../utils/format";
 import { academicYearMonths, academicYearStartYear, academicYearLabel, classForMonth, getMonthStatus, getStudentTotalPaid, monthlyFeeAmount } from "../../utils/monthlyFees";
 
@@ -31,8 +32,19 @@ export default function StudentDetails() {
   const cardRef = useRef(null);
   const receiptRef = useRef(null);
   const [refresh, setRefresh] = useState(0);
-  const students = getStudents();
-  const student = students.find((s) => s.id === id);
+  const [student, setStudent] = useState(null);
+  const [studentLoading, setStudentLoading] = useState(true);
+  const [studentError, setStudentError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setStudentLoading(true); setStudentError("");
+    getStudentById(id)
+      .then((record) => { if (active) { setStudent(record); setEditForm(record); } })
+      .catch((error) => { if (active) setStudentError(error.message || "Unable to load this student from Supabase."); })
+      .finally(() => { if (active) setStudentLoading(false); });
+    return () => { active = false; };
+  }, [id]);
   const payments = useMemo(
     () => getPayments().filter((p) => p.studentId === id).sort((a, b) => String(b.date).localeCompare(String(a.date))),
     [id, refresh]
@@ -49,9 +61,10 @@ export default function StudentDetails() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [form, setForm] = useState({ feeMonth: "", amount: "", date: new Date().toISOString().slice(0, 10), mode: "UPI", reference: "", note: "" });
   const [promotionForm, setPromotionForm] = useState({ className: "", monthlyFee: "", effectiveFrom: "" });
-  const [editForm, setEditForm] = useState(student || {});
+  const [editForm, setEditForm] = useState({});
 
-  if (!student) return <AppLayout title="Student Not Found"><div className="panel empty-state">Student record not found.</div></AppLayout>;
+  if (studentLoading) return <AppLayout title="Student Profile"><div className="panel">Loading student from Supabase...</div></AppLayout>;
+  if (!student) return <AppLayout title="Student Not Found"><div className="panel empty-state">{studentError || "Student record not found."}</div></AppLayout>;
 
   const currentAcademicYear = academicYearStartYear(new Date().toISOString().slice(0, 7));
   const knownYears = Array.from(new Set([currentAcademicYear, ...((student.feeHistory || []).map(x => academicYearStartYear(x.effectiveFrom))), historyYear, currentAcademicYear - 1, currentAcademicYear + 1])).filter(Number.isFinite).sort((a,b)=>a-b);
@@ -132,20 +145,19 @@ export default function StudentDetails() {
     reader.onload = () => setEditForm((prev) => ({ ...prev, photo: reader.result }));
     reader.readAsDataURL(file);
   }
-  function savePromotion(e) {
+  async function savePromotion(e) {
     e.preventDefault();
     const nextClass = promotionForm.className;
     const nextFee = Number(promotionForm.monthlyFee || 0);
     if (!nextClass || nextFee <= 0 || !promotionForm.effectiveFrom) return alert("Please select the new class, monthly fee and effective month.");
     if (promotionForm.effectiveFrom <= student.feeStartMonth && nextClass === student.className) return alert("Choose a new effective month for the promotion.");
-    const updated = promoteStudent(id, promotionForm);
-    if (!updated) return alert("Unable to promote this student.");
-    setHistoryYear(academicYearStartYear(promotionForm.effectiveFrom));
-    setShowPromotion(false);
-    setEditForm(updated);
-    setRefresh(v => v + 1);
+    try {
+      const updated = await updateStudent(id, { ...promotionForm, feeEffectiveFrom: promotionForm.effectiveFrom, monthlyFee: nextFee });
+      setStudent(updated); setHistoryYear(academicYearStartYear(promotionForm.effectiveFrom));
+      setShowPromotion(false); setEditForm(updated); setRefresh(v => v + 1);
+    } catch (error) { alert(error.message || "Unable to promote this student."); }
   }
-  function saveEdit(e) {
+  async function saveEdit(e) {
     e.preventDefault();
     const monthly = Number(editForm.monthlyFee || 0);
     if (monthly <= 0) return alert("Monthly fee must be greater than ₹0.");
@@ -156,16 +168,18 @@ export default function StudentDetails() {
           ? editForm.feeStartMonth
           : new Date().toISOString().slice(0, 7))
       : student.feeStartMonth;
-    updateStudent(id, { ...editForm, monthlyFee: monthly, totalFees: monthly * 12, feeEffectiveFrom: effectiveFrom });
-    setShowEdit(false);
-    setRefresh((v) => v + 1);
+    try {
+      const updated = await updateStudent(id, { ...editForm, monthlyFee: monthly, totalFees: monthly * 12, feeEffectiveFrom: effectiveFrom });
+      setStudent(updated); setEditForm(updated); setShowEdit(false); setRefresh((v) => v + 1);
+    } catch (error) { alert(error.message || "Unable to update this student."); }
   }
-  function confirmArchive() { archiveStudent(id); navigate("/admin/students"); }
+  async function confirmArchive() {
+    try { await archiveStudent(id); navigate("/admin/students"); }
+    catch (error) { alert(error.message || "Unable to archive this student."); }
+  }
   function confirmPermanentDelete() {
     if (!window.confirm(`PERMANENTLY DELETE ${student.name}? This will remove the student profile, all previous-class history, fee plans, and every payment/receipt record. This action cannot be undone.`)) return;
-    const removed = permanentlyDeleteStudent(id);
-    if (!removed) return alert("Unable to permanently delete this student.");
-    navigate("/admin/students");
+    alert("Permanent deletion is temporarily unavailable while student records are being migrated. Please archive this student instead.");
   }
 
   return (
