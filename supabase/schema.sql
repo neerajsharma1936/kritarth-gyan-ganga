@@ -227,6 +227,8 @@ values
  ('receipt-assets','receipt-assets',false,5242880,array['image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;
 
+update storage.buckets set public = true where id = 'website-assets';
+
 drop policy if exists "public read published image assets" on storage.objects;
 create policy "public read published image assets" on storage.objects for select to anon, authenticated
 using (bucket_id in ('achievement-photos','website-assets'));
