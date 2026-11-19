@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addDemoRequest, getWebsiteContent, getStudentAchievements } from "./utils/storage";
 import { signInAdmin } from "./lib/auth";
+import { fetchPublishedWebsiteContent } from "./lib/websiteContent";
 
 const programs = [
   ["01", "Little Learners", "Nursery–Class 5", "Build joyful early skills in English, Hindi, Maths, reading and homework habits."],
@@ -22,7 +23,8 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState("login");
   const [message, setMessage] = useState("");
   const [enquiryMessage, setEnquiryMessage] = useState("");
-  const content = getWebsiteContent();
+  const [content, setContent] = useState(() => getWebsiteContent());
+  useEffect(() => { let active = true; fetchPublishedWebsiteContent().then(value => { if (active) setContent(value); }).catch(error => { console.error("Could not load published website content:", error); }); return () => { active = false; }; }, []);
 
   const openAuth = (mode = "login") => {
     setAuthMode(mode);
