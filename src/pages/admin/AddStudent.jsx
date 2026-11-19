@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
-import { addStudent } from "../../utils/storage";
+import { addStudent } from "../../lib/studentService";
 
 const initial = {
   name:"", fatherName:"", phone:"", email:"", aadhaar:"", parentName:"", parentWhatsApp:"", parentPhone:"", parentEmail:"",
@@ -32,12 +32,14 @@ export default function AddStudent() {
     reader.readAsDataURL(file);
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault(); setError("");
     if(Number(form.paidFees)>Number(form.totalFees)) return setError("Paid fees cannot be greater than total fees.");
     if(!form.name.trim()||!form.phone.trim()||!form.monthlyFee) return setError("Please fill all required fields.");
-    const student=addStudent({...form,totalFees:Number(form.totalFees),paidFees:Number(form.paidFees),monthlyFee:Number(form.monthlyFee)});
-    navigate(`/admin/students/${student.id}`);
+    try {
+      const student = await addStudent({...form,totalFees:Number(form.totalFees),paidFees:Number(form.paidFees),monthlyFee:Number(form.monthlyFee)});
+      navigate(`/admin/students/${student.id}`);
+    } catch (err) { setError(err.message || "Unable to save the student to Supabase."); }
   }
 
   return (
