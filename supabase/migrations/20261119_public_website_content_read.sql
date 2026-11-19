@@ -11,4 +11,4 @@ update storage.buckets set public = true where id = 'website-assets';
 drop policy if exists "public read published image assets" on storage.objects;
 create policy "public read published image assets" on storage.objects
 for select to anon, authenticated
-using (bucket_id = 'website-assets');
+using (bucket_id in ('achievement-photos','website-assets'));
