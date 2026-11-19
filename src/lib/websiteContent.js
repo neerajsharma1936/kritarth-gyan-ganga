@@ -17,7 +17,7 @@ function safeSegment(value) {
 async function uploadBlob(blob, field) {
   const client = requireSupabase();
   const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
-  const path = `${safeSegment(field)}/${Date.now()}-${crypto.randomUUID()}.\${extension}`;
+  const path = `${safeSegment(field)}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
   const { error } = await client.storage.from(BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
     cacheControl: "3600",
