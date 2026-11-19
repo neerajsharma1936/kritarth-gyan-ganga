@@ -200,6 +200,11 @@ begin
   end loop;
 end $$;
 
+-- Public visitors can read the single published website-content record; only staff can write it.
+drop policy if exists "public read published website content" on public.website_content;
+create policy "public read published website content" on public.website_content
+for select to anon, authenticated using (id = 1);
+
 -- Public visitors may submit enquiries, but cannot read or edit them.
 drop policy if exists "public submit demo request" on public.demo_requests;
 create policy "public submit demo request" on public.demo_requests for insert to anon, authenticated
@@ -221,6 +226,8 @@ values
  ('website-assets','website-assets',true,5242880,array['image/jpeg','image/png','image/webp']),
  ('receipt-assets','receipt-assets',false,5242880,array['image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;
+
+update storage.buckets set public = true where id = 'website-assets';
 
 drop policy if exists "public read published image assets" on storage.objects;
 create policy "public read published image assets" on storage.objects for select to anon, authenticated

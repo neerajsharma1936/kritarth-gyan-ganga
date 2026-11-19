@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppLayout from "../../components/layout/AppLayout";
-import { getWebsiteContent, saveWebsiteContent } from "../../utils/storage";
+import { getWebsiteContent } from "../../utils/storage";
+import { fetchPublishedWebsiteContent, publishWebsiteContent, uploadWebsiteImage } from "../../lib/websiteContent";
 
 export default function WebsiteContent() {
   const [content, setContent] = useState(() => getWebsiteContent());
+  useEffect(() => { let active = true; fetchPublishedWebsiteContent().then(value => { if (active) setContent(value); }).catch(error => { if (active) setSaveError(error?.message || "Could not load published website content."); }); return () => { active = false; }; }, []);
   const [saved, setSaved] = useState(false);
   const update = (key, value) => setContent(c => ({ ...c, [key]: value }));
   const [saveError, setSaveError] = useState("");
-  const save = (e) => { e.preventDefault(); try { saveWebsiteContent(content); setSaved(true); setSaveError(""); setTimeout(() => setSaved(false), 2500); } catch (error) { setSaved(false); setSaveError(error?.name === "QuotaExceededError" ? "Image is too large for browser storage. Use a smaller photo." : "Could not save website content. Please try again."); } };
+  const save = async (e) => { e.preventDefault(); setSaved(false); setSaveError(""); try { const published = await publishWebsiteContent(content); setContent(published); setSaved(true); setTimeout(() => setSaved(false), 2500); } catch (error) { setSaveError(error?.message || "Could not publish website content. Check your administrator access and Supabase Storage policies."); } };
   async function uploadImage(key, file) {
     if (!file) return;
     if (!file.type.startsWith("image/")) { setSaveError("Please choose an image file."); return; }
@@ -30,10 +32,9 @@ export default function WebsiteContent() {
         quality = quality > 0.5 ? quality - 0.1 : quality;
       }
       if (!blob || blob.size > 350 * 1024) throw new Error("Image could not be compressed enough");
-      const reader = new FileReader();
-      const data = await new Promise((resolve, reject) => { reader.onload = () => resolve(String(reader.result || "")); reader.onerror = reject; reader.readAsDataURL(blob); });
-      update(key, data); setSaveError(""); setSaved(false);
-    } catch (error) { setSaveError("Could not process the photo. Try a JPG or PNG image."); }
+      const publicUrl = await uploadWebsiteImage(blob, key);
+      update(key, publicUrl); setSaveError(""); setSaved(false);
+    } catch (error) { setSaveError(error?.message || "Could not upload the photo. Check your administrator access and try again."); }
     finally { URL.revokeObjectURL(objectUrl); }
   }
   const ImageUpload = ({label, field}) => <div className="field full-span"><label>{label}</label><div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>{content[field] && <img src={content[field]} alt={`${label} preview`} style={{width:100,height:80,objectFit:"cover",borderRadius:10,border:"1px solid #dce5eb"}}/>}<input type="file" accept="image/*" onChange={e=>{uploadImage(field,e.target.files?.[0]);e.target.value="";}}/><button type="button" className="secondary-button" onClick={()=>{update(field,"");setSaved(false);}}>Remove photo</button></div><small>Upload JPG, PNG or WebP. Click Save Changes to publish.</small></div>;
