@@ -164,8 +164,8 @@ export async function addStudent(student) {
     className,
     monthlyFee,
     totalFees: monthlyFee * 12,
-    paidFees: 0,
-    lastPaymentDate: "",
+    paidFees: Number(student.paidFees || 0),
+    lastPaymentDate: student.lastPaymentDate || "",
     feeStartMonth,
     feeHistory: [
       {
