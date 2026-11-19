@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2, Users, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
 import StudentTable from "../../components/students/StudentTable";
 import Modal from "../../components/common/Modal";
 import Receipt from "../../components/receipts/Receipt";
-import { getStudents, getPayments, archiveStudent, restoreStudent, normalizeClassName } from "../../utils/storage";
+import { getPayments, normalizeClassName } from "../../utils/storage";
+import { getStudents, archiveStudent } from "../../lib/studentService";
 
 const CLASS_OPTIONS = [
   "All Classes",
@@ -22,11 +23,17 @@ export default function Students() {
   const [showArchived, setShowArchived] = useState(false);
   const [receiptStudent, setReceiptStudent] = useState(null);
   const [deleteStudent, setDeleteStudent] = useState(null);
-  const [students, setStudents] = useState(() => getStudents());
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  function refreshStudents() {
-    setStudents(getStudents());
+  async function refreshStudents() {
+    try { setLoadError(""); setStudents(await getStudents({ includeArchived: true })); }
+    catch (error) { setLoadError(error.message || "Unable to load students from Supabase."); }
+    finally { setLoading(false); }
   }
+
+  useEffect(() => { refreshStudents(); }, []);
   const payments = getPayments();
 
   const activeStudents = useMemo(() => students.filter(s => showArchived ? s.archived : !s.archived), [students, showArchived]);
@@ -47,11 +54,10 @@ export default function Students() {
         .sort((a,b) => b.date.localeCompare(a.date))[0]
     : null;
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteStudent) return;
-    archiveStudent(deleteStudent.id);
-    setDeleteStudent(null);
-    refreshStudents();
+    try { await archiveStudent(deleteStudent.id); setDeleteStudent(null); await refreshStudents(); }
+    catch (error) { setLoadError(error.message || "Unable to archive this student."); }
   }
 
   return (
@@ -73,6 +79,8 @@ export default function Students() {
           </div>
         </div>
 
+        {loadError && <div className="error-box">{loadError}</div>}
+        {loading && <div className="panel">Loading students from Supabase...</div>}
         <div className="panel table-panel students-table-panel">
           <div className="panel-head">
             <div><h2>{classFilter === "All Classes" ? "All Students" : classFilter}</h2><p>{filtered.length} student{filtered.length !== 1 ? "s" : ""} found{query ? ` for “${query}”` : ""}</p></div>
